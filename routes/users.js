@@ -46,7 +46,7 @@ router
     if (password) {
       res.status(201).json(true);
     } else {
-      res.status(404).json({ message: "없는 아이디 입니다." });
+      res.status(404).json({ message: "올바르지 않는 password 입니다." });
     }
   });
 module.exports = router;
