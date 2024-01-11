@@ -21,7 +21,7 @@ router.get("/:id", [validate], (req, res) => {
   res.json("개별 도서 조회");
 });
 
-//전체 도서 조회
+//카테고리별 도서 조회
 router.get("/", [validate], (req, res) => {
   res.json("전체 도서 조회");
 });

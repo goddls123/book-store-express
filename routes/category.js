@@ -11,19 +11,9 @@ const validate = (req, res, next) => {
   next();
 };
 
-//장바구니 조회
+//카테고리 전체 조회
 router.get("/", [validate], (req, res) => {
   res.json("조회");
-});
-
-//장바구니 담기
-router.post("/", [validate], (req, res) => {
-  res.json("담기");
-});
-
-//장바구니 삭제
-router.post("/:id", [validate], (req, res) => {
-  res.json("삭제");
 });
 
 module.exports = router;
