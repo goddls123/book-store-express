@@ -2,7 +2,11 @@ const express = require("express");
 const dotenv = require("dotenv");
 
 const app = express();
-const userRouter = require("./routes/users.js");
+const usersRouter = require("./routes/users.js");
+const booksRouter = require("./routes/books.js");
+const likesRouter = require("./routes/likes.js");
+const cartsRouter = require("./routes/carts.js");
+const categoryRouter = require("./routes/category.js");
 
 dotenv.config();
 
@@ -10,6 +14,10 @@ app.use(express.json());
 app.get("/", (req, res) => {
   res.status(200).send("book store");
 });
-app.use("/", userRouter);
+app.use("/users", usersRouter);
+app.use("/books", booksRouter);
+app.use("/likes", likesRouter);
+app.use("/carts", cartsRouter);
+app.use("/category", categoryRouter);
 
 app.listen(process.env.PORT);
