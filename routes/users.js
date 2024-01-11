@@ -1,5 +1,5 @@
 const express = require("express");
-
+const conn = require("../mariadb.js");
 const router = express.Router();
 const { validationResult, body } = require("express-validator");
 
@@ -26,11 +26,17 @@ router.post(
   ],
   (req, res) => {
     const { email, password } = req.body;
-    if (password) {
-      res.status(201).send("로그인 성공");
-    } else {
-      res.status(403).json({ message: "올바른 email와 password를 입력하세요" });
-    }
+    const sql = "SELECT * from users where email = ?";
+
+    conn.query(sql, email, (err, results) => {
+      if (results[0] && results[0].password === password) {
+        res.status(201).send("로그인 성공");
+      } else {
+        res
+          .status(403)
+          .json({ message: "올바른 email와 password를 입력하세요" });
+      }
+    });
   }
 );
 
