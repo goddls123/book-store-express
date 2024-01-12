@@ -1,7 +1,13 @@
 const express = require("express");
-
+const conn = require("../mariadb.js");
 const router = express.Router();
 const { validationResult, body } = require("express-validator");
+const {
+  join,
+  login,
+  passwordReset,
+  passwordResetRequest,
+} = require("../controller/UserController.js");
 
 const validate = (req, res, next) => {
   const err = validationResult(req);
@@ -24,14 +30,7 @@ router.post(
       .withMessage("올바른 email와 password를 입력하세요"),
     validate,
   ],
-  (req, res) => {
-    const { email, password } = req.body;
-    if (password) {
-      res.status(201).send("로그인 성공");
-    } else {
-      res.status(403).json({ message: "올바른 email와 password를 입력하세요" });
-    }
-  }
+  login
 );
 
 //회원가입
@@ -48,15 +47,7 @@ router.post(
       .withMessage("올바른 email와 password를 입력하세요"),
     validate,
   ],
-  (req, res) => {
-    const { email, password } = req.body;
-
-    if (email) {
-      res.status(201).send("가입 성공");
-    } else {
-      res.status(400).json({ message: "중복된 아이디가 존재 합니다." });
-    }
-  }
+  join
 );
 
 //비밀번호 변경 요청
@@ -70,14 +61,7 @@ router
         .withMessage("올바른 email와 password를 입력하세요"),
       validate,
     ],
-    (req, res) => {
-      const { email } = req.body;
-      if (email) {
-        res.status(201).json(true);
-      } else {
-        res.status(400).json({ message: "없는 아이디 입니다." });
-      }
-    }
+    passwordResetRequest
   )
   .put(
     [
@@ -87,12 +71,7 @@ router
         .withMessage("올바른 email와 password를 입력하세요"),
       validate,
     ],
-    (req, res) => {
-      const { email, password } = req.body;
-
-      if (password) {
-        res.status(201).json(true);
-      }
-    }
+    passwordReset
   );
+
 module.exports = router;
