@@ -73,4 +73,5 @@ router
     ],
     passwordReset
   );
+
 module.exports = router;
