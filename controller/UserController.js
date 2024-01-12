@@ -55,19 +55,39 @@ const login = (req, res) => {
 
 const passwordResetRequest = (req, res) => {
   const { email } = req.body;
-  if (email) {
-    res.status(201).json(true);
-  } else {
-    res.status(400).json({ message: "없는 아이디 입니다." });
-  }
+  const sql = "SELECT * from users where email = ?";
+
+  conn.query(sql, email, (err, results) => {
+    if (err) {
+      console.log(err);
+      return res.status(StatusCodes.BAD_REQUEST).end();
+    }
+    const user = results[0];
+
+    if (user) {
+      return res.status(StatusCodes.OK).json({ email: user.email });
+    } else {
+      return res.status(StatusCodes.UNAUTHORIZED).end();
+    }
+  });
 };
 
 const passwordReset = (req, res) => {
   const { email, password } = req.body;
+  const sql = `UPDATE users SET password=? where email = ?`;
+  let values = [password, email];
+  conn.query(sql, values, (err, results) => {
+    if (err) {
+      console.log(err);
+      return res.status(StatusCodes.BAD_REQUEST).end();
+    }
 
-  if (password) {
-    res.status(201).json(true);
-  }
+    if (results.affectedRows === 0) {
+      return res.status(StatusCodes.BAD_REQUEST).end();
+    } else {
+      return res.status(StatusCodes.OK).end();
+    }
+  });
 };
 
 module.exports = { join, login, passwordReset, passwordResetRequest };
