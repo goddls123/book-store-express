@@ -1,6 +1,7 @@
 const express = require("express");
 const conn = require("../mariadb.js");
 const router = express.Router();
+const { addLike, removeLike } = require("../controller/LikeController.js");
 const { validationResult, body } = require("express-validator");
 
 const validate = (req, res, next) => {
@@ -12,13 +13,9 @@ const validate = (req, res, next) => {
 };
 
 //좋아요 추가
-router.post("/:id", [validate], (req, res) => {
-  res.json("좋아요");
-});
+router.post("/:id", [validate], addLike);
 
 //좋아요 취소
-router.delete("/:id", [validate], (req, res) => {
-  res.json("좋아요");
-});
+router.delete("/:id", [validate], removeLike);
 
 module.exports = router;
