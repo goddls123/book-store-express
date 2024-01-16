@@ -2,8 +2,22 @@ const conn = require("../mariadb.js");
 const { StatusCodes } = require("http-status-codes");
 
 const allBooks = (req, res) => {
-  const sql = "SELECT * FROM books";
-  conn.query(sql, (err, results) => {
+  const { category_id, news } = req.query;
+
+  console.log(news);
+  let sql = `SELECT * FROM books`;
+  let values = [];
+  if (category_id && news) {
+    sql += ` WHERE category_id=? AND pub_date BETWEEN DATE_SUB(NOW(), INTERVAL 3 MONTH ) AND NOW()`;
+    values = [category_id, news];
+  } else if (category_id) {
+    sql += ` WHERE category_id=?`;
+    values = category_id;
+  } else if (news) {
+    sql += ` WHERE pub_date BETWEEN DATE_SUB(NOW(), INTERVAL 3 MONTH ) AND NOW()`;
+    values = news;
+  }
+  conn.query(sql, values, (err, results) => {
     if (err) {
       console.log(err);
       return res.status(StatusCodes.BAD_REQUEST).end();
@@ -14,7 +28,7 @@ const allBooks = (req, res) => {
 
 const bookDetail = (req, res) => {
   let { id } = req.params;
-  const sql = "SELECT * FROM books WHERE id = ?";
+  const sql = `SELECT * FROM books LEFT JOIN category ON books.category_id = category.id WHERE books.id = ?`;
   conn.query(sql, id, (err, results) => {
     if (err) {
       console.log(err);
