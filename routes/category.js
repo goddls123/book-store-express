@@ -1,6 +1,6 @@
 const express = require("express");
-const conn = require("../mariadb.js");
 const router = express.Router();
+const { allCategory } = require("../controller/CategoryController");
 const { validationResult, body } = require("express-validator");
 
 const validate = (req, res, next) => {
@@ -12,8 +12,6 @@ const validate = (req, res, next) => {
 };
 
 //카테고리 전체 조회
-router.get("/", [validate], (req, res) => {
-  res.json("조회");
-});
+router.get("/", [validate], allCategory);
 
 module.exports = router;
