@@ -1,5 +1,9 @@
 const express = require("express");
-const conn = require("../mariadb.js");
+const {
+  getCartItems,
+  addToCart,
+  removeToCart,
+} = require("../controller/CartController.js");
 const router = express.Router();
 const { validationResult, body } = require("express-validator");
 
@@ -12,18 +16,12 @@ const validate = (req, res, next) => {
 };
 
 //장바구니 조회
-router.get("/", [validate], (req, res) => {
-  res.json("조회");
-});
+router.get("/", [validate], getCartItems);
 
 //장바구니 담기
-router.post("/", [validate], (req, res) => {
-  res.json("담기");
-});
+router.post("/", [validate], addToCart);
 
 //장바구니 삭제
-router.post("/:id", [validate], (req, res) => {
-  res.json("삭제");
-});
+router.post("/:id", [validate], removeToCart);
 
 module.exports = router;

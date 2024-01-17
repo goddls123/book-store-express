@@ -55,7 +55,21 @@ const bookDetail = (req, res) => {
 };
 
 const bookByCategory = (req, res) => {
-  res.json("전체 도서 조회");
+  let { category_id } = req.query;
+  const sql = "SELECT * FROM books WHERE category_id = ?";
+
+  console.log(category_id);
+  conn.query(sql, category_id, (err, results) => {
+    if (err) {
+      console.log(err);
+      return res.status(StatusCodes.BAD_REQUEST).end();
+    }
+    if (results[0]) {
+      return res.status(StatusCodes.OK).json(results);
+    } else {
+      return res.status(StatusCodes.NOT_FOUND).end();
+    }
+  });
 };
 
 module.exports = { allBooks, bookDetail, bookByCategory };
