@@ -2,23 +2,18 @@ const conn = require("../mariadb.js");
 const { StatusCodes } = require("http-status-codes");
 
 const getCartItems = (req, res) => {
-  const { category_id, news, limit, currentPage } = req.query;
+  const { user_id, selected } = req.body;
 
-  let sql = `SELECT * FROM books`;
-  let values = [];
-  if (category_id && news) {
-    sql += ` WHERE category_id=? AND pub_date BETWEEN DATE_SUB(NOW(), INTERVAL 3 MONTH ) AND NOW()`;
-    values = [category_id];
-  } else if (category_id) {
-    sql += ` WHERE category_id=?`;
-    values = [category_id];
-  } else if (news) {
-    sql += ` WHERE pub_date BETWEEN DATE_SUB(NOW(), INTERVAL 3 MONTH ) AND NOW()`;
+  let sql = `SELECT cartItems.id, book_id, title, summary, quantity, price 
+            FROM cartItems LEFT JOIN books 
+            ON cartItems.book_id = books.id
+            WHERE cartItems.user_id = ?`;
+
+  if (selected && selected.length) {
+    sql += ` AND cartItems.id IN (?)`;
   }
 
-  sql += ` LIMIT ? OFFSET ?`;
-  let offset = (currentPage - 1) * limit;
-  values = [...values, parseInt(limit), offset];
+  let values = [user_id, selected];
   conn.query(sql, values, (err, results) => {
     if (err) {
       console.log(err);
@@ -44,11 +39,8 @@ const addToCart = (req, res) => {
 
 const removeToCart = (req, res) => {
   const { id } = req.params;
-  const { user_id } = req.body;
-  let sql = `DELETE FROM cartItems WHERE id=? AND liked_book_id=?`;
-  let values = [user_id, id];
-
-  conn.query(sql, values, (err, results) => {
+  let sql = `DELETE FROM cartItems WHERE id = ?`;
+  conn.query(sql, id, (err, results) => {
     if (err) {
       console.log(err);
       return res.status(StatusCodes.BAD_REQUEST).end();

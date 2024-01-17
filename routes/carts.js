@@ -22,6 +22,6 @@ router.get("/", [validate], getCartItems);
 router.post("/", [validate], addToCart);
 
 //장바구니 삭제
-router.post("/:id", [validate], removeToCart);
+router.delete("/:id", [validate], removeToCart);
 
 module.exports = router;
