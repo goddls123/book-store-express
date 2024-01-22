@@ -1,8 +1,11 @@
 const conn = require("../mariadb.js");
 const { StatusCodes } = require("http-status-codes");
+const { ensureAuthorization } = require("../uitl/auth.js");
 
 const getCartItems = (req, res) => {
-  const { user_id, selected } = req.body;
+  const { selected } = req.body;
+
+  const authorization = ensureAuthorization(req);
 
   let sql = `SELECT cartItems.id, book_id, title, summary, quantity, price 
             FROM cartItems LEFT JOIN books 
@@ -13,7 +16,7 @@ const getCartItems = (req, res) => {
     sql += ` AND cartItems.id IN (?)`;
   }
 
-  let values = [user_id, selected];
+  let values = [authorization.id, selected];
   conn.query(sql, values, (err, results) => {
     if (err) {
       console.log(err);
@@ -24,9 +27,11 @@ const getCartItems = (req, res) => {
 };
 
 const addToCart = (req, res) => {
-  const { user_id, quantity, book_id } = req.body;
+  const { quantity, book_id } = req.body;
+  const authorization = ensureAuthorization(req);
+
   let sql = `INSERT INTO cartItems (user_id, quantity, book_id) VALUES (?, ? ,?)`;
-  let values = [user_id, quantity, book_id];
+  let values = [authorization.id, quantity, book_id];
   conn.query(sql, values, (err, results) => {
     if (err) {
       console.log(err);
@@ -38,9 +43,10 @@ const addToCart = (req, res) => {
 };
 
 const removeToCart = (req, res) => {
-  const { id } = req.params;
+  const cartItemId = req.params.id;
   let sql = `DELETE FROM cartItems WHERE id = ?`;
-  conn.query(sql, id, (err, results) => {
+
+  conn.query(sql, cartItemId, (err, results) => {
     if (err) {
       console.log(err);
       return res.status(StatusCodes.BAD_REQUEST).end();
