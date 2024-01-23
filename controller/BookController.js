@@ -3,8 +3,8 @@ const { StatusCodes } = require("http-status-codes");
 
 const allBooks = (req, res) => {
   const { category_id, news, limit, currentPage } = req.query;
-
-  let sql = `SELECT * FROM books`;
+  const allBooks = {};
+  let sql = `SELECT SQL_CALC_FOUND_ROWS * FROM books`;
   let values = [];
   if (category_id && news) {
     sql += ` WHERE category_id=? AND pub_date BETWEEN DATE_SUB(NOW(), INTERVAL 3 MONTH ) AND NOW()`;
@@ -24,7 +24,25 @@ const allBooks = (req, res) => {
       console.log(err);
       return res.status(StatusCodes.BAD_REQUEST).end();
     }
-    return res.status(StatusCodes.OK).json(results);
+    if (results.length) {
+      allBooks.books = results;
+    } else {
+      return res.status(StatusCodes.NOT_FOUND).end();
+    }
+  });
+
+  sql = `SELECT found_rows()`;
+  conn.query(sql, (err, results) => {
+    if (err) {
+      console.log(err);
+      return res.status(StatusCodes.BAD_REQUEST).end();
+    }
+    const pagination = {};
+    pagination.currentPage = parseInt(currentPage);
+    pagination.totalCount = results[0]["found_rows()"];
+    allBooks.pagination = pagination;
+    res.status(StatusCodes.OK).json(allBooks);
+    return res.status(StatusCodes.NOT_FOUND).end();
   });
 };
 
