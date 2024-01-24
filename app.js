@@ -7,6 +7,7 @@ const booksRouter = require("./routes/books.js");
 const likesRouter = require("./routes/likes.js");
 const cartsRouter = require("./routes/carts.js");
 const categoryRouter = require("./routes/category.js");
+const ordersRouter = require("./routes/orders.js");
 
 dotenv.config();
 
@@ -19,5 +20,6 @@ app.use("/books", booksRouter);
 app.use("/likes", likesRouter);
 app.use("/carts", cartsRouter);
 app.use("/category", categoryRouter);
+app.use("/orders", ordersRouter);
 
 app.listen(process.env.PORT);

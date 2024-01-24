@@ -2,55 +2,49 @@ const conn = require("../mariadb.js");
 const { StatusCodes } = require("http-status-codes");
 
 const order = async (req, res) => {
-  const { items, delivery, totalQuantity, totalPrice, userId, firstBookTitle } =
-    req.body;
+  try {
+    const {
+      items,
+      delivery,
+      totalQuantity,
+      totalPrice,
+      userId,
+      firstBookTitle,
+    } = req.body;
 
-  let sql = `INSERT INTO delivery (address, receiver, contact) VALUES (?, ?, ?)`;
-  let values = [delivery.address, delivery.receiver, delivery.contact];
-  let delivery_id = "";
-  let order_id = "";
-  conn.query(sql, values, (err, results) => {
-    if (err) {
-      console.log(err);
-      return res.status(StatusCodes.BAD_REQUEST).end();
-    }
-    delivery_id = results.insertId;
-  });
+    let sql = `INSERT INTO delivery (address, receiver, contact) VALUES (?, ?, ?)`;
+    let values = [delivery.address, delivery.receiver, delivery.contact];
+    let delivery_id = "";
+    let order_id = "";
+    let results = await conn.promise().query(sql, values);
+    delivery_id = results[0].insertId;
 
-  sql = `INSERT INTO orders (book_title, total_quantity, total_price, user_id, delivery_id) 
-  VALUES (?, ?, ?, ?, ?)`;
-  values = [firstBookTitle, totalQuantity, totalPrice, userId, delivery_id];
+    sql = `INSERT INTO orders (book_title, total_quantity, total_price, user_id, delivery_id)
+    VALUES (?, ?, ?, ?, ?)`;
+    values = [firstBookTitle, totalQuantity, totalPrice, userId, delivery_id];
 
-  conn.query(sql, values, (err, results) => {
-    if (err) {
-      console.log(err);
-      return res.status(StatusCodes.BAD_REQUEST).end();
-    }
-    order_id = results.insertId;
-  });
+    results = await conn.promise().query(sql, values);
+    order_id = results[0].insertId;
 
-  sql = `INSERT INTO orderedBook (order_id, book_id, quantity) VALUES ?`;
+    sql = `INSERT INTO orderedBook (order_id, book_id, quantity) VALUES ?`;
 
-  values = [];
-  items.forEach((item) => {
-    values.push([order_id, item.book_id, item.quatity]);
-  });
-  conn.query(sql, [values], (err, results) => {
-    if (err) {
-      console.log(err);
-      return res.status(StatusCodes.BAD_REQUEST).end();
-    }
-  });
+    values = items.map((item) => [order_id, item.book_id, item.quatity]);
 
-  let result = await deleteCartItems(items.map((i) => i.cartItem_id));
+    results = await conn.promise().query(sql, [values]);
 
-  return res.status(StatusCodes.OK).json(result);
+    results = await deleteCartItems(items.map((i) => i.cartItem_id));
+
+    return res.status(StatusCodes.OK).json(results);
+  } catch (err) {
+    console.log(err);
+    return res.status(StatusCodes.BAD_REQUEST).json(err);
+  }
 };
 
 const deleteCartItems = async (values) => {
   let sql = `DELETE FROM cartItems WHERE id IN (?)`;
 
-  let result = await conn.query(sql, [values]);
+  let result = await conn.promise().query(sql, [values]);
   return result;
 };
 

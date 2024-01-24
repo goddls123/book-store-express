@@ -5,18 +5,20 @@ const { ensureAuthorization } = require("../uitl/auth.js");
 const getCartItems = (req, res) => {
   const { selected } = req.body;
 
-  const authorization = ensureAuthorization(req);
+  const authorization = ensureAuthorization(req, res);
 
   let sql = `SELECT cartItems.id, book_id, title, summary, quantity, price 
             FROM cartItems LEFT JOIN books 
             ON cartItems.book_id = books.id
             WHERE cartItems.user_id = ?`;
 
+  let values = [authorization.id];
+
   if (selected && selected.length) {
     sql += ` AND cartItems.id IN (?)`;
+    values.push(selected);
   }
 
-  let values = [authorization.id, selected];
   conn.query(sql, values, (err, results) => {
     if (err) {
       console.log(err);
@@ -28,7 +30,7 @@ const getCartItems = (req, res) => {
 
 const addToCart = (req, res) => {
   const { quantity, book_id } = req.body;
-  const authorization = ensureAuthorization(req);
+  const authorization = ensureAuthorization(req, res);
 
   let sql = `INSERT INTO cartItems (user_id, quantity, book_id) VALUES (?, ? ,?)`;
   let values = [authorization.id, quantity, book_id];
