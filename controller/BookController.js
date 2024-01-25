@@ -1,5 +1,6 @@
 const conn = require("../mariadb.js");
 const { StatusCodes } = require("http-status-codes");
+const { ensureAuthorization } = require("../uitl/auth.js");
 
 const allBooks = (req, res) => {
   const { category_id, news, limit, currentPage } = req.query;
@@ -42,23 +43,32 @@ const allBooks = (req, res) => {
     pagination.totalCount = results[0]["found_rows()"];
     allBooks.pagination = pagination;
     res.status(StatusCodes.OK).json(allBooks);
+
     return res.status(StatusCodes.NOT_FOUND).end();
   });
 };
 
 const bookDetail = (req, res) => {
-  let { id } = req.params;
-  let { user_id } = req.body;
-  const sql = `SELECT 
-              a.id, a.title, a.form, a.category_id, b.name, a.isbn, a.detail, a.pages, a.contents, a.summary, a.author, a.price, a.pub_date,
-                (SELECT count(*) FROM likes WHERE liked_book_id = ?) AS likes,
-                (SELECT EXISTS (SELECT * FROM likes WHERE user_id = ? )) AS liked
+  let bookId = req.params.id;
+
+  const authorization = ensureAuthorization(req);
+  let values = [];
+  let sql = `SELECT 
+              a.id, a.title, a.form, a.category_id, b.name, a.isbn, a.detail, a.pages, a.contents, a.summary, a.author, a.price, a.pub_date,`;
+  if (authorization.ok) {
+    sql += ` (SELECT EXISTS (SELECT * FROM likes WHERE user_id = ? AND liked_book_id = ? )) AS liked,`;
+    values.push(authorization.id);
+    values.push(bookId);
+  }
+
+  sql += ` (SELECT count(*) FROM likes WHERE liked_book_id = ?) AS likes
               FROM books a
               LEFT JOIN category b
               ON a.category_id = b.id 
               WHERE a.id = ?`;
 
-  let values = [id, user_id, id];
+  values = [...values, bookId, bookId];
+
   conn.query(sql, values, (err, results) => {
     if (err) {
       console.log(err);
