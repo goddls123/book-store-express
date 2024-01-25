@@ -1,17 +1,16 @@
 const conn = require("../mariadb.js");
 const { StatusCodes } = require("http-status-codes");
-const jwt = require("jsonwebtoken");
-const crypto = require("crypto");
-const dotenv = require("dotenv");
-dotenv.config();
+const {
+  makeToken,
+  makeHashPassword,
+  hashingPassword,
+} = require("../uitl/auth.js");
 
 const join = (req, res) => {
   const { email, password } = req.body;
 
-  const salt = crypto.randomBytes(10).toString("base64");
-  const hashPassword = crypto
-    .pbkdf2Sync(password, salt, 10000, 10, "sha512")
-    .toString("base64");
+  const { salt, hashPassword } = makeHashPassword(password);
+
   let sql = "INSERT INTO users (email,password,salt) VALUES (?,?,?)";
 
   let values = [email, hashPassword, salt];
@@ -39,21 +38,10 @@ const login = (req, res) => {
       return res.status(StatusCodes.BAD_REQUEST).end();
     }
     const loginUser = results[0];
-    const hashPassword = crypto
-      .pbkdf2Sync(password, loginUser.salt, 10000, 10, "sha512")
-      .toString("base64");
+    const hashPassword = hashingPassword(password, loginUser.salt);
+
     if (loginUser && loginUser.password === hashPassword) {
-      const token = jwt.sign(
-        {
-          id: loginUser.id,
-          email: loginUser.email,
-        },
-        process.env.PRIVATE_KEY,
-        {
-          expiresIn: "30m",
-          issuer: "test",
-        }
-      );
+      const token = makeToken(loginUser);
       res.cookie("token", token, {
         httpOnly: true,
       });
@@ -89,10 +77,7 @@ const passwordReset = (req, res) => {
   const { email, password } = req.body;
   const sql = `UPDATE users SET password=?, salt=? where email = ?`;
 
-  const salt = crypto.randomBytes(10).toString("base64");
-  const hashPassword = crypto
-    .pbkdf2Sync(password, salt, 10000, 10, "sha512")
-    .toString("base64");
+  const { salt, hashPassword } = makeHashPassword(password);
 
   let values = [hashPassword, salt, email];
   conn.query(sql, values, (err, results) => {

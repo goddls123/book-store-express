@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
-const { StatusCodes } = require("http-status-codes");
+const crypto = require("crypto");
 dotenv.config();
 
 const ensureAuthorization = (req) => {
@@ -27,4 +27,37 @@ const ensureAuthorization = (req) => {
   }
 };
 
-module.exports = { ensureAuthorization };
+const makeToken = (loginUser) => {
+  const token = jwt.sign(
+    {
+      id: loginUser.id,
+      email: loginUser.email,
+    },
+    process.env.PRIVATE_KEY,
+    {
+      expiresIn: "30m",
+      issuer: "test",
+    }
+  );
+  return token;
+};
+
+const makeHashPassword = (password) => {
+  const salt = crypto.randomBytes(10).toString("base64");
+  const hashPassword = crypto
+    .pbkdf2Sync(password, salt, 10000, 10, "sha512")
+    .toString("base64");
+  return { salt, hashPassword };
+};
+
+const hashingPassword = (password, salt) => {
+  return crypto
+    .pbkdf2Sync(password, salt, 10000, 10, "sha512")
+    .toString("base64");
+};
+module.exports = {
+  ensureAuthorization,
+  makeToken,
+  makeHashPassword,
+  hashingPassword,
+};
