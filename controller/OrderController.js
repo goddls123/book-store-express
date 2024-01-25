@@ -1,16 +1,17 @@
 const conn = require("../mariadb.js");
 const { StatusCodes } = require("http-status-codes");
+const { ensureAuthorization } = require("../uitl/auth.js");
 
 const order = async (req, res) => {
   try {
-    const {
-      items,
-      delivery,
-      totalQuantity,
-      totalPrice,
-      userId,
-      firstBookTitle,
-    } = req.body;
+    const { items, delivery, totalQuantity, totalPrice, firstBookTitle } =
+      req.body;
+
+    const authorization = ensureAuthorization(req);
+
+    if (!authorization.ok) {
+      throw Error(authorization.message);
+    }
 
     let sql = `INSERT INTO delivery (address, receiver, contact) VALUES (?, ?, ?)`;
     let values = [delivery.address, delivery.receiver, delivery.contact];
@@ -21,7 +22,13 @@ const order = async (req, res) => {
 
     sql = `INSERT INTO orders (book_title, total_quantity, total_price, user_id, delivery_id)
     VALUES (?, ?, ?, ?, ?)`;
-    values = [firstBookTitle, totalQuantity, totalPrice, userId, delivery_id];
+    values = [
+      firstBookTitle,
+      totalQuantity,
+      totalPrice,
+      authorization.id,
+      delivery_id,
+    ];
 
     results = await conn.promise().query(sql, values);
     order_id = results[0].insertId;
@@ -37,7 +44,7 @@ const order = async (req, res) => {
     return res.status(StatusCodes.OK).json(results);
   } catch (err) {
     console.log(err);
-    return res.status(StatusCodes.BAD_REQUEST).json(err);
+    return res.status(StatusCodes.BAD_REQUEST).json({ message: err.message });
   }
 };
 
@@ -49,7 +56,11 @@ const deleteCartItems = async (values) => {
 };
 
 const getOrders = (req, res) => {
-  const { user_id } = req.body;
+  const authorization = ensureAuthorization(req);
+
+  if (!authorization.ok) {
+    throw Error(authorization.message);
+  }
 
   let sql = `SELECT 
                 a.id,
@@ -64,8 +75,7 @@ const getOrders = (req, res) => {
                 ON a.delivery_id = b.id
                 WHERE a.user_id = ?`;
 
-  let values = [user_id];
-  conn.query(sql, values, (err, results) => {
+  conn.query(sql, authorization.id, (err, results) => {
     if (err) {
       console.log(err);
       return res.status(StatusCodes.BAD_REQUEST).end();
@@ -75,7 +85,7 @@ const getOrders = (req, res) => {
 };
 
 const getOrderDetail = (req, res) => {
-  let { id } = req.params;
+  const orderId = req.params.id;
 
   let sql = `SELECT 
                 b.book_id,
@@ -86,8 +96,8 @@ const getOrderDetail = (req, res) => {
                 FROM orderedBook a LEFT JOIN books b
                 ON a.book_id = b.id
                 WHERE a.order_id = ?`;
-  let values = [id];
-  conn.query(sql, values, (err, results) => {
+
+  conn.query(sql, orderId, (err, results) => {
     if (err) {
       console.log(err);
       return res.status(StatusCodes.BAD_REQUEST).end();

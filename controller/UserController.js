@@ -50,7 +50,7 @@ const login = (req, res) => {
         },
         process.env.PRIVATE_KEY,
         {
-          expiresIn: "30m",
+          expiresIn: "1m",
           issuer: "test",
         }
       );

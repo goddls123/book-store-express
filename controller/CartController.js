@@ -5,7 +5,11 @@ const { ensureAuthorization } = require("../uitl/auth.js");
 const getCartItems = (req, res) => {
   const { selected } = req.body;
 
-  const authorization = ensureAuthorization(req, res);
+  const authorization = ensureAuthorization(req);
+
+  if (!authorization.ok) {
+    throw Error(authorization.message);
+  }
 
   let sql = `SELECT cartItems.id, book_id, title, summary, quantity, price 
             FROM cartItems LEFT JOIN books 
@@ -30,7 +34,12 @@ const getCartItems = (req, res) => {
 
 const addToCart = (req, res) => {
   const { quantity, book_id } = req.body;
-  const authorization = ensureAuthorization(req, res);
+
+  const authorization = ensureAuthorization(req);
+
+  if (!authorization.ok) {
+    throw Error(authorization.message);
+  }
 
   let sql = `INSERT INTO cartItems (user_id, quantity, book_id) VALUES (?, ? ,?)`;
   let values = [authorization.id, quantity, book_id];
